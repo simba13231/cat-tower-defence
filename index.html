@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Cats vs Dogs — Defend the Kingdom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+<div id="floatLayer"></div>
+<div id="toast"></div>
+
+<!-- ==================== MAIN MENU ==================== -->
+<div id="screen-menu">
+  <div class="menuTitleWrap">
+    <div class="menuPaws">🐾 🐾 🐾</div>
+    <h1 class="menuTitle">CATS vs DOGS</h1>
+    <div class="menuSubtitle">DEFEND THE KINGDOM</div>
+  </div>
+  <div class="menuButtons">
+    <button id="playBtn">▶ PLAY</button>
+  </div>
+  <div id="bestStars"></div>
+  <div class="soundToggleWrap"><button id="soundToggle" class="secondary">🔊 Sound On</button></div>
+</div>
+
+<!-- ==================== HUD ==================== -->
+<div id="hudRoot">
+  <div id="topBar">
+    <div class="hudChip"><span class="ico">🪙</span><span id="hudCoins">0</span></div>
+    <div class="hudChip"><span class="ico">❤️</span><span id="hudLives">0</span></div>
+    <div class="hudChip"><span class="ico">🌊</span><span id="hudWave">0/0</span></div>
+    <div id="waveLabel"></div>
+    <button id="speedBtn" class="wood">1x</button>
+    <button id="pauseBtn" class="secondary">⏸</button>
+  </div>
+  <div id="bossBarWrap">
+    <div id="bossName">Boss</div>
+    <div id="bossTrack"><div id="bossFill"></div></div>
+  </div>
+  <button id="startWaveBtn">Start Wave 1</button>
+  <div id="towerPanel"></div>
+  <div id="shopTray"></div>
+</div>
+
+<!-- ==================== PAUSE ==================== -->
+<div id="pauseOverlay" class="overlayScreen">
+  <div class="overlayCard">
+    <h2>Paused</h2>
+    <div class="overlayBtns">
+      <button id="resumeBtn">Resume</button>
+      <button id="restartBtn" class="wood">Restart Level</button>
+      <button id="exitBtn" class="danger">Exit to Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== VICTORY ==================== -->
+<div id="screen-victory" class="overlayScreen">
+  <div class="overlayCard">
+    <h2>Victory!</h2>
+    <div class="stars" id="victoryStars">⭐⭐⭐</div>
+    <div class="statRow"><span>Dogs defeated</span><span id="vDogs">0</span></div>
+    <div class="statRow"><span>Coins earned</span><span id="vCoins">0</span></div>
+    <div class="statRow"><span>Lives remaining</span><span id="vLives">0</span></div>
+    <div class="overlayBtns">
+      <button id="victoryRetryBtn">Play Again</button>
+      <button id="victoryMenuBtn" class="secondary">Main Menu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== DEFEAT ==================== -->
+<div id="screen-defeat" class="overlayScreen">
+  <div class="overlayCard">
+    <h2>The Dogs Got In...</h2>
+    <div style="font-size:40px;">🐶💥🏰</div>
+    <div class="statRow"><span>Reached wave</span><span id="dWave">0</span></div>
+    <div class="statRow"><span>Dogs defeated</span><span id="dDogs">0</span></div>
+    <div class="statRow"><span>Coins earned</span><span id="dCoins">0</span></div>
+    <div class="overlayBtns">
+      <button id="defeatRetryBtn">Try Again</button>
+      <button id="defeatMenuBtn" class="secondary">Main Menu</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+<!-- Game source, split into focused files (see README for the map). -->
+<script src="js/utils.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/towerData.js"></script>
+<script src="js/enemyData.js"></script>
+<script src="js/textures.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/map.js"></script>
+<script src="js/entities.js"></script>
+<script src="js/enemies.js"></script>
+<script src="js/towers.js"></script>
+<script src="js/waves.js"></script>
+<script src="js/effects.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/shop.js"></script>
+<script src="js/input.js"></script>
+<script src="js/save.js"></script>
+<script src="js/game.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>

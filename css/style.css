@@ -1,0 +1,140 @@
+:root{
+  --cream:#fff8ec;
+  --ink:#3a2c1e;
+  --grass:#5fa14a;
+  --grass-dark:#3f7e37;
+  --sun:#ffcf56;
+  --cat-orange:#f2924a;
+  --cat-orange-dark:#d9762e;
+  --sky:#8fd1e8;
+  --danger:#e05252;
+  --danger-dark:#b83e3e;
+  --wood:#a9743f;
+  --wood-dark:#7e5228;
+  --panel-shadow: 0 6px 0 rgba(94,58,20,0.35), 0 10px 18px rgba(60,35,10,0.25);
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:'Nunito',sans-serif;color:var(--ink);}
+#gameCanvas{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;}
+
+.display-font{font-family:'Baloo 2',cursive;}
+
+button{
+  font-family:'Baloo 2',cursive;
+  border:none; cursor:pointer; border-radius:14px;
+  padding:10px 18px; font-size:16px; font-weight:700;
+  background:var(--cat-orange); color:#fff;
+  box-shadow:0 5px 0 var(--cat-orange-dark);
+  transition:transform .06s ease;
+}
+button:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--cat-orange-dark); }
+button:disabled{ background:#b9b0a2; box-shadow:0 5px 0 #8f8879; cursor:default; }
+button.secondary{ background:#fff; color:var(--ink); box-shadow:0 5px 0 #d8cdb8; }
+button.danger{ background:var(--danger); box-shadow:0 5px 0 var(--danger-dark); }
+button.wood{ background:var(--wood); box-shadow:0 5px 0 var(--wood-dark); }
+
+#screen-menu{
+  position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background: radial-gradient(ellipse at 50% 0%, #bdeaf5 0%, #8fd1e8 55%, #5fa14a 100%);
+  z-index:20; text-align:center; overflow:hidden;
+}
+.menuTitleWrap{ position:relative; z-index:2; }
+.menuTitle{
+  font-size:min(11vw,86px); line-height:1; margin:0; color:#fff; font-weight:800;
+  -webkit-text-stroke:3px var(--ink);
+  text-shadow: 4px 4px 0 var(--cat-orange-dark), 0 10px 22px rgba(0,0,0,.25);
+  letter-spacing:1px;
+}
+.menuSubtitle{ font-size:min(4.2vw,22px); font-weight:700; color:var(--ink); margin:6px 0 26px; letter-spacing:2px;}
+.menuPaws{ font-size:34px; margin-bottom:10px; }
+.menuButtons{ display:flex; flex-direction:column; gap:14px; z-index:2; position:relative;}
+.menuButtons button{ min-width:220px; font-size:20px; padding:16px 26px; }
+#bestStars{ margin-top:16px; font-weight:800; color:var(--ink); font-size:15px; opacity:.85;}
+.soundToggleWrap{ position:absolute; bottom:18px; right:18px; }
+#soundToggle{ font-size:14px; padding:8px 14px; }
+
+#hudRoot{ position:fixed; inset:0; pointer-events:none; z-index:10; display:none; flex-direction:column; }
+#topBar{
+  pointer-events:auto; margin:12px auto 0; display:flex; gap:10px; align-items:center;
+  background:var(--cream); border-radius:20px; padding:8px 14px; box-shadow:var(--panel-shadow);
+  width:fit-content;
+}
+.hudChip{ display:flex; align-items:center; gap:6px; font-weight:800; font-family:'Baloo 2',cursive; font-size:16px; padding:4px 10px; }
+.hudChip .ico{font-size:18px;}
+#waveLabel{ font-weight:800; font-family:'Baloo 2',cursive; padding:4px 10px; color:var(--wood-dark); }
+#pauseBtn, #speedBtn{ padding:6px 12px; font-size:15px; }
+
+#bossBarWrap{
+  display:none; pointer-events:auto; margin:8px auto 0; width:min(520px,80vw);
+  background:var(--cream); border-radius:14px; padding:8px 12px; box-shadow:var(--panel-shadow);
+  text-align:center;
+}
+#bossName{ font-family:'Baloo 2',cursive; font-weight:800; color:var(--danger-dark); font-size:15px; }
+#bossTrack{ background:#e6dcc8; border-radius:8px; height:14px; margin-top:4px; overflow:hidden; }
+#bossFill{ background:linear-gradient(90deg,var(--danger),var(--danger-dark)); height:100%; width:100%; transition:width .2s; }
+
+#startWaveBtn{ position:fixed; top:14px; right:14px; pointer-events:auto; font-size:16px; padding:12px 20px; }
+
+#shopTray{
+  pointer-events:auto; position:fixed; left:0; right:0; bottom:0; display:flex; gap:8px;
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom)); overflow-x:auto;
+  background:linear-gradient(180deg, var(--wood) 0%, var(--wood-dark) 100%);
+  box-shadow:0 -6px 16px rgba(0,0,0,.25);
+}
+.shopBtn{
+  flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:2px;
+  background:#fff8ec; color:var(--ink); border-radius:12px; padding:6px 10px 8px;
+  box-shadow:0 4px 0 #c9b98f; min-width:78px;
+}
+.shopBtn.selected{ background:var(--sun); box-shadow:0 4px 0 #c99a1f; transform:translateY(-2px); }
+.shopBtn.disabled{ opacity:.45; }
+.shopIcon{ width:32px;height:32px;border-radius:8px; display:flex;align-items:center;justify-content:center; font-size:17px; }
+.shopName{ font-size:11px; font-weight:800; font-family:'Baloo 2',cursive; white-space:nowrap;}
+.shopCost{ font-size:11px; font-weight:700; color:var(--grass-dark); }
+
+#towerPanel{
+  display:none; pointer-events:auto; position:fixed; top:70px; right:14px; width:250px;
+  background:var(--cream); border-radius:16px; padding:14px; box-shadow:var(--panel-shadow);
+}
+.tpHeader{ display:flex; gap:10px; align-items:center; margin-bottom:8px;}
+.tpIcon{ width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px; flex:0 0 auto;}
+.tpName{ font-family:'Baloo 2',cursive; font-weight:800; font-size:16px; }
+.tpTag{ font-size:12px; opacity:.7; font-style:italic; }
+.tpStats{ font-size:12.5px; font-weight:700; margin-bottom:6px; }
+.tpLevel{ font-size:12px; background:#fff; border-radius:8px; padding:6px 8px; margin-bottom:8px; }
+.tpRow{ display:flex; gap:6px; margin-bottom:8px; }
+.tpRow button{ flex:1; font-size:12.5px; padding:8px 6px; }
+.tpTargetLabel{ font-size:11px; font-weight:800; opacity:.7; margin-bottom:4px; }
+.tpTargets{ display:flex; flex-wrap:wrap; gap:5px; }
+.tmBtn{ background:#fff; color:var(--ink); box-shadow:0 3px 0 #d8cdb8; font-size:11px; padding:6px 8px; text-transform:capitalize; }
+.tmBtn.active{ background:var(--grass); color:#fff; box-shadow:0 3px 0 var(--grass-dark); }
+
+#toast{
+  position:fixed; top:120px; left:50%; transform:translateX(-50%) translateY(-10px);
+  background:var(--ink); color:#fff; font-weight:700; padding:10px 18px; border-radius:12px;
+  opacity:0; transition:opacity .25s, transform .25s; pointer-events:none; z-index:30; font-size:14px;
+}
+#toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+#floatLayer{ position:fixed; inset:0; pointer-events:none; z-index:15; }
+.floatText{ position:absolute; font-family:'Baloo 2',cursive; font-weight:800; font-size:15px; transform:translate(-50%,-50%); text-shadow:0 2px 3px rgba(0,0,0,.4); }
+
+.overlayScreen{
+  position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:25;
+  background:rgba(30,20,10,0.55);
+}
+.overlayCard{
+  background:var(--cream); border-radius:22px; padding:30px 34px; text-align:center; box-shadow:var(--panel-shadow);
+  width:min(360px,86vw);
+}
+.overlayCard h2{ font-family:'Baloo 2',cursive; font-size:30px; margin:0 0 6px; }
+.overlayCard .stars{ font-size:34px; margin:10px 0; }
+.statRow{ display:flex; justify-content:space-between; font-weight:700; font-size:14px; padding:5px 10px; background:#fff; border-radius:8px; margin-bottom:6px; }
+.overlayBtns{ display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+
+@media (max-width:560px){
+  .shopName{ display:none; }
+  .shopBtn{ min-width:52px; padding:6px; }
+  #towerPanel{ width:210px; right:8px; top:64px; }
+  .menuButtons button{ min-width:190px; font-size:17px; }
+}
