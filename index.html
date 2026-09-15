@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cats vs Dogs — Defend the Kingdom (PlayCanvas)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<style>
+  html, body { margin:0; padding:0; height:100%; overflow:hidden; background:#000; font-family: 'Segoe UI', system-ui, sans-serif; }
+  #app-canvas { width:100%; height:100%; display:block; }
+
+  #hud {
+    position:fixed; top:10px; left:10px; right:10px; display:flex; align-items:center; gap:16px;
+    padding:10px 18px; color:#fff; font-size:15px; z-index:10; border-radius:14px;
+    background:linear-gradient(180deg, rgba(92,63,34,0.92), rgba(58,38,20,0.92));
+    border:2px solid rgba(255,255,255,0.15); box-shadow:0 4px 14px rgba(0,0,0,0.45);
+  }
+  .hudStat { display:flex; align-items:center; gap:6px; font-weight:700; text-shadow:0 1px 2px rgba(0,0,0,0.5); }
+  .hudStat .icon { font-size:17px; }
+  #startWaveBtn {
+    margin-left:auto; padding:9px 18px; border:none; border-radius:10px; cursor:pointer;
+    background:linear-gradient(180deg,#66d16a,#3f9c46); color:#fff; font-weight:700; font-size:14px;
+    box-shadow:0 2px 0 #2c7a32, 0 3px 8px rgba(0,0,0,0.3); transition:transform 0.1s;
+  }
+  #startWaveBtn:active { transform:translateY(1px); }
+  #startWaveBtn:disabled { background:#8a8a8a; box-shadow:none; cursor:default; }
+
+  #buildBar {
+    position:fixed; bottom:10px; left:10px; right:10px; display:flex; justify-content:center; gap:12px;
+    padding:12px; z-index:10; border-radius:16px;
+    background:linear-gradient(180deg, rgba(92,63,34,0.92), rgba(58,38,20,0.92));
+    border:2px solid rgba(255,255,255,0.15); box-shadow:0 4px 14px rgba(0,0,0,0.45);
+  }
+  .towerBtn {
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    padding:8px 16px 10px; border:2px solid rgba(255,255,255,0.25); border-radius:14px; cursor:pointer;
+    background:rgba(255,255,255,0.08); font-size:12px; font-weight:700; color:#fff;
+    text-shadow:0 1px 2px rgba(0,0,0,0.4); transition:transform 0.12s, background 0.12s;
+  }
+  .towerBtn:hover:not(:disabled) { transform:translateY(-2px); background:rgba(255,255,255,0.16); }
+  .towerBtn .iconRing {
+    width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:19px; border:2px solid rgba(255,255,255,0.55); box-shadow:inset 0 0 8px rgba(0,0,0,0.25);
+  }
+  .towerBtn:disabled { opacity:0.4; cursor:default; transform:none; }
+  .towerBtn.selected { border-color:#7CFC9A; background:rgba(124,252,154,0.18); }
+  .towerBtn.selected .iconRing { border-color:#7CFC9A; }
+
+  #message {
+    position:fixed; top:66px; left:50%; transform:translateX(-50%);
+    background:rgba(20,14,8,0.85); color:#fff; padding:8px 18px; border-radius:8px;
+    font-size:14px; font-weight:600; opacity:0; transition:opacity 0.3s; z-index:10; pointer-events:none;
+    border:1px solid rgba(255,255,255,0.15);
+  }
+
+  #defeatOverlay {
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.7); z-index:20; flex-direction:column; gap:14px; color:#fff;
+  }
+  #defeatOverlay h1 { margin:0; text-shadow:0 2px 6px rgba(0,0,0,0.6); }
+  #retryBtn {
+    padding:11px 26px; font-size:15px; font-weight:700; border:none; border-radius:10px; cursor:pointer;
+    background:linear-gradient(180deg,#66d16a,#3f9c46); color:#fff; box-shadow:0 2px 0 #2c7a32, 0 3px 8px rgba(0,0,0,0.3);
+  }
+</style>
+</head>
+<body>
+<canvas id="app-canvas"></canvas>
+
+<div id="hud">
+  <div class="hudStat"><span class="icon">🪙</span><span id="hudCoins">0</span></div>
+  <div class="hudStat"><span class="icon">❤️</span><span id="hudLives">0</span></div>
+  <div class="hudStat"><span class="icon">🌊</span>Wave <span id="hudWave">0</span></div>
+  <button id="startWaveBtn">Start Wave 1</button>
+</div>
+
+<div id="message"></div>
+
+<div id="buildBar">
+  <button class="towerBtn" data-type="scout"><span class="iconRing" style="background:#f2a65a">🐾</span>Scout · 50</button>
+  <button class="towerBtn" data-type="angry"><span class="iconRing" style="background:#e05252">😾</span>Angry · 70</button>
+  <button class="towerBtn" data-type="wizard"><span class="iconRing" style="background:#9b59b6">✨</span>Wizard · 100</button>
+  <button class="towerBtn" data-type="robot"><span class="iconRing" style="background:#4fd1c5">🤖</span>Robot · 120</button>
+</div>
+
+<div id="defeatOverlay">
+  <h1>The dogs got through!</h1>
+  <button id="retryBtn">Try Again</button>
+</div>
+
+<!-- Open-source PlayCanvas engine, self-hosted from their CDN — no cloud
+     editor / account needed, this is just a JS library like Three.js was. -->
+<script src="https://code.playcanvas.com/playcanvas-stable.min.js"></script>
+
+<!-- Load order matters: data first, then things that only define functions,
+     then main.js (builds the scene + starts the app), then the game loop
+     and input, which both reach for globals main.js creates. -->
+<script src="js/mapData.js"></script>
+<script src="js/config.js"></script>
+<script src="js/entitiesPC.js"></script>
+<script src="js/main.js"></script>
+<script src="js/gamePC.js"></script>
+<script src="js/inputPC.js"></script>
+</body>
+</html>
