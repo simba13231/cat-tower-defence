@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Cats vs Dogs — Defend the Kingdom (PlayCanvas)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  /* ---- Design: a carved-wood village signpost, for a cozy cat-kingdom
+     defense game. Palette is parchment/saddle-brown/meadow-green/marigold —
+     deliberately not the generic cream+terracotta or dark+neon defaults.
+     Baloo 2 (rounded, storybook) for anything with personality; Nunito
+     (clean, friendly) for numbers/labels that need to stay legible mid-game. ---- */
+  :root{
+    --parchment:#F3E4BC;
+    --wood-dark:#4A3018;
+    --wood-mid:#6B4526;
+    --ember:#C1442E;
+    --meadow-deep:#2c5e2e;
+    --meadow:#4C9A4C;
+    --marigold:#F2A65A;
+    --ink:#2B1E14;
+  }
+
+  html, body {
+    margin:0; padding:0; height:100%; overflow:hidden;
+    font-family:'Nunito', system-ui, sans-serif; color:var(--ink);
+    background: linear-gradient(180deg, #4aa3d6 0%, #8fd0ea 45%, #cdeaf2 75%, #e9f6df 100%);
+  }
+  #app-canvas { width:100%; height:100%; display:block; }
+
+  /* Shared "carved wood plank" surface — a subtle grain instead of a flat
+     fill, so panels read as signage rather than SaaS cards. */
+  .woodPanel{
+    background:
+      repeating-linear-gradient(100deg, rgba(255,255,255,0.05) 0 2px, rgba(0,0,0,0.05) 2px 4px),
+      linear-gradient(180deg, var(--wood-mid), var(--wood-dark));
+    border:2px solid rgba(0,0,0,0.35);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.15), 0 6px 16px rgba(0,0,0,0.4);
+  }
+
+  #titleScreen {
+    position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center;
+    background: radial-gradient(ellipse at 50% 30%, rgba(255,255,255,0.28), rgba(0,0,0,0.12));
+    padding:20px;
+  }
+  .titlePlaque { padding:28px 44px 34px; border-radius:26px 26px 14px 14px; text-align:center; max-width:420px; }
+  .titlePlaque h1 {
+    margin:0; font-family:'Baloo 2', sans-serif; font-weight:800;
+    font-size:clamp(30px,7vw,52px); color:var(--parchment); letter-spacing:0.5px;
+    text-shadow:0 3px 0 rgba(0,0,0,0.4), 0 8px 18px rgba(0,0,0,0.35);
+  }
+  .titlePlaque p { margin:10px 0 22px; font-size:15px; color:var(--parchment); opacity:0.85; }
+  #playBtn {
+    font-family:'Baloo 2', sans-serif; font-weight:700; font-size:20px;
+    padding:14px 42px; border:none; border-radius:16px 16px 10px 10px; cursor:pointer;
+    background:linear-gradient(180deg, #6fe073, var(--meadow-deep)); color:#fff;
+    box-shadow:0 4px 0 var(--meadow-deep), 0 8px 18px rgba(0,0,0,0.35);
+    transition:transform 0.1s;
+  }
+  #playBtn:active { transform:translateY(3px); }
+
+  #hud, #buildBar { display:none; }
+  #hud {
+    position:fixed; top:12px; left:12px; right:12px; align-items:center; gap:14px;
+    padding:10px 16px; border-radius:20px; z-index:10;
+  }
+  .badge { display:flex; align-items:center; gap:8px; padding:5px 14px 5px 5px; border-radius:999px; background:rgba(0,0,0,0.18); }
+  .badge .medallion {
+    width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:15px;
+    background:radial-gradient(circle at 35% 30%, #fff6d8, var(--marigold) 60%, #b9793a 100%);
+    box-shadow:inset 0 -2px 3px rgba(0,0,0,0.25), 0 1px 2px rgba(0,0,0,0.3);
+  }
+  .badge.lives .medallion { background:radial-gradient(circle at 35% 30%, #ffe3df, var(--ember) 60%, #7c2317 100%); }
+  .badge .val { font-family:'Baloo 2', sans-serif; font-weight:700; font-size:16px; color:var(--parchment); }
+  .waveTag {
+    font-family:'Baloo 2', sans-serif; font-weight:700; font-size:15px; color:var(--parchment);
+    padding:7px 16px; border-radius:999px; background:rgba(0,0,0,0.18);
+  }
+  #startWaveBtn {
+    margin-left:auto; font-family:'Baloo 2', sans-serif;
+    padding:9px 20px; border:none; border-radius:14px 14px 8px 8px; cursor:pointer;
+    background:linear-gradient(180deg, #6fe073, var(--meadow-deep)); color:#fff; font-weight:700; font-size:14px;
+    box-shadow:0 3px 0 var(--meadow-deep), 0 5px 10px rgba(0,0,0,0.3); transition:transform 0.1s;
+  }
+  #startWaveBtn:active { transform:translateY(2px); }
+  #startWaveBtn:disabled { background:#7d7466; box-shadow:none; cursor:default; }
+
+  #buildBar {
+    position:fixed; bottom:12px; left:12px; right:12px; justify-content:center; gap:14px;
+    padding:14px 12px 10px; border-radius:22px; z-index:10;
+  }
+  .towerBtn {
+    display:flex; flex-direction:column; align-items:center; gap:5px;
+    padding:6px 14px 8px; border:none; border-radius:16px; cursor:pointer;
+    background:rgba(0,0,0,0.14); font-family:'Nunito', sans-serif; font-size:12px; font-weight:700; color:var(--parchment);
+    transition:transform 0.12s, background 0.12s;
+  }
+  .towerBtn:hover:not(:disabled) { transform:translateY(-3px); background:rgba(0,0,0,0.22); }
+  .towerBtn .iconRing {
+    width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px;
+    box-shadow:inset 0 -3px 4px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.35), inset 0 2px 2px rgba(255,255,255,0.3);
+  }
+  .towerBtn .costTag {
+    font-size:10.5px; font-weight:800; color:var(--wood-dark); background:var(--marigold);
+    border-radius:999px; padding:1px 8px; margin-top:-1px;
+  }
+  .towerBtn:disabled { opacity:0.4; cursor:default; transform:none; }
+  .towerBtn.selected { background:rgba(124,252,154,0.25); box-shadow:inset 0 0 0 2px var(--meadow); }
+
+  #message {
+    position:fixed; top:72px; left:50%; transform:translateX(-50%);
+    background:rgba(20,14,8,0.88); color:var(--parchment); padding:8px 20px; border-radius:12px;
+    font-family:'Nunito', sans-serif; font-weight:700; font-size:14px; opacity:0; transition:opacity 0.3s;
+    z-index:10; pointer-events:none;
+  }
+
+  @keyframes popScale { 0%{transform:scale(1);} 35%{transform:scale(1.4);} 100%{transform:scale(1);} }
+  .pop { animation: popScale 0.35s ease; }
+  @keyframes shakeX { 0%,100%{transform:translateX(0);} 25%{transform:translateX(-5px);} 75%{transform:translateX(5px);} }
+  .shake { animation: shakeX 0.3s ease; }
+
+  #waveBanner {
+    position:fixed; top:36%; left:50%; transform:translate(-50%,-50%) scale(0.8);
+    font-family:'Baloo 2', sans-serif; font-weight:800; font-size:clamp(28px,8vw,54px);
+    color:var(--parchment); text-shadow:0 4px 0 rgba(0,0,0,0.4), 0 10px 22px rgba(0,0,0,0.4);
+    opacity:0; pointer-events:none; z-index:15; transition:opacity 0.25s, transform 0.25s; text-align:center;
+  }
+  #waveBanner.show { opacity:1; transform:translate(-50%,-50%) scale(1); }
+
+  #defeatOverlay {
+    position:fixed; inset:0; display:none; align-items:center; justify-content:center;
+    background:rgba(0,0,0,0.72); z-index:20; flex-direction:column; gap:16px; color:var(--parchment);
+  }
+  #defeatOverlay h1 { margin:0; font-family:'Baloo 2', sans-serif; font-size:32px; text-shadow:0 3px 8px rgba(0,0,0,0.6); }
+  #retryBtn {
+    font-family:'Baloo 2', sans-serif; padding:12px 28px; font-size:16px; font-weight:700; border:none;
+    border-radius:14px 14px 8px 8px; cursor:pointer;
+    background:linear-gradient(180deg, #6fe073, var(--meadow-deep)); color:#fff;
+    box-shadow:0 3px 0 var(--meadow-deep), 0 6px 14px rgba(0,0,0,0.35);
+  }
+</style>
+</head>
+<body>
+<canvas id="app-canvas"></canvas>
+
+<div id="titleScreen">
+  <div class="titlePlaque woodPanel">
+    <h1>Cats vs Dogs</h1>
+    <p>Defend the kingdom — place cats, stop the dogs.</p>
+    <button id="playBtn">▶ Play</button>
+  </div>
+</div>
+
+<div id="hud" class="woodPanel">
+  <div class="badge" id="coinsBadge"><span class="medallion">🪙</span><span class="val" id="hudCoins">0</span></div>
+  <div class="badge lives" id="livesBadge"><span class="medallion">❤️</span><span class="val" id="hudLives">0</span></div>
+  <div class="waveTag">Wave <span id="hudWave">0</span></div>
+  <button id="startWaveBtn">Start Wave 1</button>
+</div>
+
+<div id="waveBanner"></div>
+
+<div id="message"></div>
+
+<div id="buildBar" class="woodPanel">
+  <button class="towerBtn" data-type="scout"><span class="iconRing" style="background:radial-gradient(circle at 35% 30%,#ffe4c2,#f2a65a 60%,#a86a2e 100%)">🐾</span>Scout<span class="costTag">50</span></button>
+  <button class="towerBtn" data-type="angry"><span class="iconRing" style="background:radial-gradient(circle at 35% 30%,#ffd9d3,#e05252 60%,#8a2a2a 100%)">😾</span>Angry<span class="costTag">70</span></button>
+  <button class="towerBtn" data-type="wizard"><span class="iconRing" style="background:radial-gradient(circle at 35% 30%,#ecd8f5,#9b59b6 60%,#5c3170 100%)">✨</span>Wizard<span class="costTag">100</span></button>
+  <button class="towerBtn" data-type="robot"><span class="iconRing" style="background:radial-gradient(circle at 35% 30%,#d4faf5,#4fd1c5 60%,#207f76 100%)">🤖</span>Robot<span class="costTag">120</span></button>
+</div>
+
+<div id="defeatOverlay">
+  <h1>The dogs got through!</h1>
+  <button id="retryBtn">Try Again</button>
+</div>
+
+<!-- Open-source PlayCanvas engine, self-hosted from their CDN — no cloud
+     editor / account needed, this is just a JS library like Three.js was. -->
+<script src="https://code.playcanvas.com/playcanvas-stable.min.js"></script>
+
+<!-- Load order matters: data first, then things that only define functions,
+     then main.js (builds the scene + starts the app), then the game loop
+     and input, which both reach for globals main.js creates. -->
+<script src="js/mapData.js"></script>
+<script src="js/audioPC.js"></script>
+<script src="js/config.js"></script>
+<script src="js/entitiesPC.js"></script>
+<script src="js/main.js"></script>
+<script src="js/gamePC.js"></script>
+<script src="js/inputPC.js"></script>
+</body>
+</html>
