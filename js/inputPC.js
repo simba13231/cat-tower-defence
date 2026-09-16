@@ -1,78 +1,302 @@
-/* =========================================================================
-   inputPC.js — turns a screen click into a grid tile and places a tower.
-   The camera is a fixed orthographic view, so every screen pixel's ray
-   through the scene points in the same direction (the camera's forward
-   vector) — only the ray's origin differs per pixel. That makes the
-   ground-plane intersection just a couple lines of algebra instead of a
-   full raycast.
-   ========================================================================= */
+// ============================================================
+// INPUT
+// ============================================================
 
-const canvasEl = document.getElementById('app-canvas');
+window.hoverTile = null;
 
-const hoverHighlight = boxEntity('hoverHighlight', TILE*0.9, 0.05, TILE*0.9, hexColor(0x66ff88), {opacity:0.5, castShadows:false, receiveShadows:false});
-hoverHighlight.enabled = false;
-mapRoot.addChild(hoverHighlight);
+function getMousePosition(event) {
+  const rect =
+    canvas.getBoundingClientRect();
 
-function screenToTile(clientX, clientY){
-  const rect = canvasEl.getBoundingClientRect();
-  const x = clientX - rect.left;
-  const y = clientY - rect.top;
-  const camComp = camera.camera;
-  const forward = camera.forward;
-  const nearPoint = camComp.screenToWorld(x, y, camComp.nearClip);
-  if (Math.abs(forward.y) < 1e-6) return null;
-  const t = -nearPoint.y / forward.y;
-  const worldXPos = nearPoint.x + forward.x * t;
-  const worldZPos = nearPoint.z + forward.z * t;
-  const col = Math.round(worldXPos / TILE + (GRID_W - 1) / 2);
-  const row = Math.round(worldZPos / TILE + (GRID_H - 1) / 2);
-  return { col, row, x: worldXPos, z: worldZPos };
+  return {
+    x:
+      event.clientX -
+      rect.left,
+
+    y:
+      event.clientY -
+      rect.top
+  };
 }
 
-canvasEl.addEventListener('mousemove', (ev)=>{
-  if (!state.buildType){ hoverHighlight.enabled = false; return; }
-  const tile = screenToTile(ev.clientX, ev.clientY);
-  if (!tile || tile.col<0 || tile.row<0 || tile.col>=GRID_W || tile.row>=GRID_H){
-    hoverHighlight.enabled = false;
-    return;
+canvas.addEventListener(
+  "mousemove",
+  event => {
+    const mouse =
+      getMousePosition(
+        event
+      );
+
+    window.hoverTile =
+      screenToTile(
+        mouse.x,
+        mouse.y
+      );
   }
-  const key = tile.col+','+tile.row;
-  const valid = isBuildable(tile.col, tile.row) && !tileEntities[key].occupied;
-  hoverHighlight.enabled = true;
-  hoverHighlight.setPosition(worldX(tile.col), 0.03, worldZ(tile.row));
-  hoverHighlight.model.material.diffuse = valid ? hexColor(0x66ff88) : hexColor(0xff6666);
-  hoverHighlight.model.material.update();
-});
+);
 
-canvasEl.addEventListener('click', (ev)=>{
-  if (state.screen !== 'playing' || !state.buildType) return;
-  const tile = screenToTile(ev.clientX, ev.clientY);
-  if (!tile) return;
-  placeTower(state.buildType, tile.col, tile.row);
-});
+canvas.addEventListener(
+  "mouseleave",
+  () => {
+    window.hoverTile = null;
+  }
+);
 
-// Build-mode buttons: click selects a tower type; clicking the same one
-// again cancels build mode.
-document.querySelectorAll('.towerBtn').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const type = btn.dataset.type;
-    state.buildType = (state.buildType === type) ? null : type;
-    sfxUiClick();
-    updateHud();
+canvas.addEventListener(
+  "click",
+  event => {
+    if (
+      state.screen !==
+      "playing"
+    ) {
+      return;
+    }
+
+    const mouse =
+      getMousePosition(
+        event
+      );
+
+    const tile =
+      screenToTile(
+        mouse.x,
+        mouse.y
+      );
+
+    if (!tile) return;
+
+    // Building
+
+    if (state.buildType) {
+      const placed =
+        placeTower(
+          state.buildType,
+          tile.col,
+          tile.row
+        );
+
+      if (placed) {
+        sfxUiClick();
+      }
+
+      return;
+    }
+
+    // Select tower
+
+    const tower =
+      state.towers.find(
+        t =>
+          distance(
+            t,
+            tile
+          ) <
+          30
+      );
+
+    if (tower) {
+      state.selectedTower =
+        tower;
+
+      updateHUD();
+
+      sfxUiClick();
+
+      return;
+    }
+
+    state.selectedTower = null;
+
+    updateHUD();
+  }
+);
+
+
+// ============================================================
+// TOWER BUTTONS
+// ============================================================
+
+document
+  .querySelectorAll(
+    ".tower-card"
+  )
+  .forEach(card => {
+    card.addEventListener(
+      "click",
+      () => {
+        const type =
+          card.dataset.type;
+
+        if (
+          state.screen !==
+          "playing"
+        ) {
+          return;
+        }
+
+        if (
+          state.coins <
+          TOWER_DEFS[type].cost
+        ) {
+          flashMessage(
+            "Not enough coins!"
+          );
+
+          return;
+        }
+
+        state.buildType =
+          state.buildType === type
+            ? null
+            : type;
+
+        state.selectedTower =
+          null;
+
+        updateHUD();
+
+        sfxUiClick();
+      }
+    );
   });
-});
 
-document.getElementById('startWaveBtn').addEventListener('click', startWave);
-document.getElementById('retryBtn').addEventListener('click', resetRunState);
 
-document.getElementById('playBtn').addEventListener('click', ()=>{
-  document.getElementById('titleScreen').style.display = 'none';
-  document.getElementById('hud').style.display = 'flex';
-  document.getElementById('buildBar').style.display = 'flex';
-  sfxUiClick();
-  resetRunState();
-});
+// ============================================================
+// START WAVE
+// ============================================================
 
-window.addEventListener('keydown', (ev)=>{
-  if (ev.key === 'Escape'){ state.buildType = null; updateHud(); }
-});
+document
+  .getElementById(
+    "startWaveBtn"
+  )
+  .addEventListener(
+    "click",
+    () => {
+      startWave();
+    }
+  );
+
+
+// ============================================================
+// PLAY
+// ============================================================
+
+document
+  .getElementById(
+    "playBtn"
+  )
+  .addEventListener(
+    "click",
+    () => {
+      startGame();
+    }
+  );
+
+
+// ============================================================
+// RETRY
+// ============================================================
+
+document
+  .getElementById(
+    "retryBtn"
+  )
+  .addEventListener(
+    "click",
+    () => {
+      startGame();
+    }
+  );
+
+
+// ============================================================
+// UPGRADE
+// ============================================================
+
+document
+  .getElementById(
+    "upgradeBtn"
+  )
+  .addEventListener(
+    "click",
+    () => {
+      if (
+        state.selectedTower
+      ) {
+        upgradeTower(
+          state.selectedTower
+        );
+      }
+    }
+  );
+
+
+// ============================================================
+// SELL
+// ============================================================
+
+document
+  .getElementById(
+    "sellBtn"
+  )
+  .addEventListener(
+    "click",
+    () => {
+      if (
+        state.selectedTower
+      ) {
+        sellTower(
+          state.selectedTower
+        );
+      }
+    }
+  );
+
+
+// ============================================================
+// ESCAPE
+// ============================================================
+
+window.addEventListener(
+  "keydown",
+  event => {
+    if (
+      event.key ===
+      "Escape"
+    ) {
+      state.buildType = null;
+      state.selectedTower = null;
+
+      updateHUD();
+    }
+  }
+);
+
+
+// ============================================================
+// GAME LOOP
+// ============================================================
+
+let lastTime =
+  performance.now();
+
+function gameLoop(now) {
+  const dt =
+    Math.min(
+      0.05,
+      (now - lastTime) /
+        1000
+    );
+
+  lastTime = now;
+
+  updateGame(dt);
+
+  requestAnimationFrame(
+    gameLoop
+  );
+}
+
+requestAnimationFrame(
+  gameLoop
+);
